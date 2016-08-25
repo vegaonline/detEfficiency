@@ -9,11 +9,15 @@
 #include <chrono>
 
 #define PI 2.0 * asin ( 1.0 )
+#define PIby2 0.5 * PI
+#define PI2 2.0 * PI
 #define x2( x ) ( x * x )
+#define SGN(x) (x > 0) - (x < 0)
 #define ev2J 1.60217656535e-19
-#define amu 1.66053904020e-27     // kg
+#define amu 1.66053904020e-24     // g
 #define eCharge 1.60217656535e-19 // Coulomb
 #define cm2m 0.01; // cm to meter
+#define cm2mm 10.0; // cm to mm
 
 unsigned seedRD = std::chrono::system_clock::now ().time_since_epoch ().count ();
 std::mt19937_64 mySeed ( seedRD );
@@ -23,7 +27,7 @@ std::string particleArray [] = {"alpha", "triton", "deuteron", "proton"};
 
 // create uniform distribution for physical parameters
 std::uniform_int_distribution<> partDist(0, (int)numParticle-1);
-std::uniform_real_distribution<double> angleDist(-PI, PI);
+std::uniform_real_distribution<double> angleDist(-PIby2, PIby2);
 
 
 
@@ -37,6 +41,7 @@ class Vector3 {
 
 class particle
 {
+ public:
     std::string name;
     double massNumU;
     double charge;
@@ -47,12 +52,12 @@ class particle
     double BE;           // eV
     double massNumG = massNumU * amu;
     double chargeCoul = charge * eCharge;
-    double posX;
-    double posY;
+    double posX;         // x position on detector
+    double posY;         // y position on detector
  public:
  particle(std::string name, double mU, double ch, double en, double tht, double phi, double ex, double binEn) 
    : name(name),massNumU(mU), charge(ch), energy(en), angle_theta(tht), angle_phi(phi), excessEnergy(ex), BE(binEn){}
-    void setPos(double, double, double );
+  
 };
 
 class beam
@@ -87,9 +92,12 @@ class target
 
 class detector
 {
+ public:
     std::string name;
     double lenX;
     double lenY;
+    double halfX = 0.5 * lenX;
+    double halfY = 0.5 * lenY;
     double thick;
     int numStripX;
     int numStripY;
@@ -102,7 +110,18 @@ class detector
 
 // generate particle pair within a solid angle
 
-void particle::setPos(double tht, double phi, double dist) {
+void setPos(double tht, double phi, double dist, double lx, double ly) {
+  double xval = 0.0, yval = 0.0;
+
+
+  do {
+    xval = dist * tan(std::abs(tht)) * SGN(tht);
+  }while(std::abs(xval) > std::abs(lx));
+  do {
+    yval = dist * tan(std::abs(phi)) * SGN(phi);
+  }while(std::abs(yval) > std::abs(ly));
+
+  std::cout << "  X :: " << xval << " Y ::  " << yval <<  std::endl;
 }
 
 void gen_Particle (int& p1, int& p2, double tht, double& thistht, double& thisphi) { 
@@ -114,10 +133,8 @@ void gen_Particle (int& p1, int& p2, double tht, double& thistht, double& thisph
   do {
     thistht = angleDist(mySeed);
     thisphi = angleDist(mySeed);
-  } while (thistht < -tht || thistht > tht ||thisphi < -tht || thisphi > tht);
-
-  
-  std::cout << " Allowed angle range = " << -tht << " : " << tht << std::endl;
-   std::cout << particleArray[p1] << "  " << particleArray[p2] << " theta = " << thistht << "  phi = " << thisphi << std::endl;
+  } while ( (std::abs(thistht) > tht) || (std::abs(thisphi) > tht) );
+ 
+  std::cout << particleArray[p1] << "  " << particleArray[p2] << "  " ;  
 
 }
