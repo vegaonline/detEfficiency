@@ -8,26 +8,37 @@
 #include <random>
 #include <chrono>
 
+#define EPSA 1.0e-4
 #define PI 2.0 * asin ( 1.0 )
 #define PIby2 0.5 * PI
 #define PI2 2.0 * PI
+
 #define x2( x ) ( x * x )
+#define sqrt(x) pow(x, 0.5)
 #define SGN(x) (x > 0) - (x < 0)
+#define between(x1, x2) ((x2 > (x1 - EPSA)) && (x2 < (x1 + EPSA)))  //  search for X2 within x1+/ EPSA
+
 #define ev2J 1.60217656535e-19
 #define amu 1.66053904020e-24     // g
 #define eCharge 1.60217656535e-19 // Coulomb
 #define cm2m 0.01; // cm to meter
 #define cm2mm 10.0; // cm to mm
 
+std::default_random_engine rngen;
 unsigned seedRD = std::chrono::system_clock::now ().time_since_epoch ().count ();
 std::mt19937_64 mySeed ( seedRD );
 
+// declare some important global variable
 unsigned int numParticle = 4;
 std::string particleArray [] = {"alpha", "triton", "deuteron", "proton"};
 
 // create uniform distribution for physical parameters
 std::uniform_int_distribution<> partDist(0, (int)numParticle-1);
-std::uniform_real_distribution<double> angleDist(-PIby2, PIby2);
+std::uniform_real_distribution<double> angleDist1(-PIby2, PIby2);
+std::uniform_real_distribution<double> angleDist2PI(0.0, PI2);
+
+// createdetector node vector
+std::vector<std::vector<double> > detNodes;
 
 
 
@@ -110,31 +121,63 @@ class detector
 
 // generate particle pair within a solid angle
 
-void setPos(double tht, double phi, double dist, double lx, double ly) {
-  double xval = 0.0, yval = 0.0;
+void setPos(double tht, double phi, double hval, double dist, double& xval, double& yval) {
+  double  tht1 = tht;
+  int isgn = SGN(tht);
 
-
-  do {
-    xval = dist * tan(std::abs(tht)) * SGN(tht);
-  }while(std::abs(xval) > std::abs(lx));
-  do {
-    yval = dist * tan(std::abs(phi)) * SGN(phi);
-  }while(std::abs(yval) > std::abs(ly));
-
-  std::cout << "  X :: " << xval << " Y ::  " << yval <<  std::endl;
+  tht = std::abs(tht);
+  xval = hval * tan(tht) * cos(phi);    // dist * tht * cos(phi);
+  yval = hval * tan(tht) * sin(phi);    // dist * tht * sin(phi);
+  xval  *= isgn;
+  yval *= isgn;
 }
 
-void gen_Particle (int& p1, int& p2, double tht, double& thistht, double& thisphi) { 
+void gen_Particle (int& p1, int& p2,  double lx, double ly, double hval, double dist, double& xval, double& yval) { 
+  double thistht = 9999.99, thisphi = 9999.99;
   do {
     p1 = partDist(mySeed);
     p2 = partDist(mySeed);
   } while (p1 !=0);
   
   do {
-    thistht = angleDist(mySeed);
-    thisphi = angleDist(mySeed);
-  } while ( (std::abs(thistht) > tht) || (std::abs(thisphi) > tht) );
+    thistht = angleDist1(mySeed);      // rngen);
+    thisphi = angleDist2PI(mySeed);    // rngen);
+    setPos(thistht, thisphi, hval, dist, xval, yval);
+  } while ( (std::abs(xval) > lx) || (std::abs(yval) > ly));
  
   std::cout << particleArray[p1] << "  " << particleArray[p2] << "  " ;  
+}
 
+void detNodeCompute(detector strip) {
+  double xloc = 0.0, yloc = 0.0;
+  double dx = strip.lenX / (double)(strip.numStripX + 1);
+  double dy = strip.lenY / (double)(strip.numStripY + 1);
+  int icnt = 0;
+
+  for (int xnode = 0; xnode < strip.numStripX; xnode++) {
+    for (int ynode = 0 ; ynode < strip.numStripY; ynode++) {
+      ++icnt;
+      std::vector<double> temp;
+      xloc = -strip.halfX + (xnode + 1) * dx;
+      yloc = -strip.halfY + (ynode + 1) * dy;
+      temp.push_back(icnt);
+      temp.push_back(xloc);
+      temp.push_back(yloc);
+      detNodes.push_back(temp);
+      temp.clear();
+    }
+  }
+}
+
+
+int checkDetection(double xpos, double ypos) {
+  int chk = 0; // 0 means not detected 1 means detected
+  double xx = 0.0, yy = 0.0;
+  for (std::vector<std::vector<double> >::iterator it1 = detNodes.begin(); it1 !=detNodes.end(); ++it1) {
+    xx = (*it1)[1];
+    yy = (*it1)[2];
+
+  }
+    std::cout << " between " << between(xx, xpos) << std::endl;
+  return 0;
 }
