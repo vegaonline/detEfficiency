@@ -105,6 +105,8 @@ class detector
     double halfX = 0.5 * lenX;
     double halfY = 0.5 * lenY;
     double thick;
+    double dx;
+    double dy;
     int numStripX;
     int numStripY;
  public:
@@ -112,12 +114,6 @@ class detector
     detector(std::string name, double lx, double ly, double thk, int nx, int ny) 
    : name(name), lenX(lx), lenY(ly), thick(thk), numStripX(nx), numStripY(ny){}
 };
-
-
-
-
-
-
 
 // generate particle pair within a solid angle
 
@@ -153,37 +149,79 @@ void gen_Particle (int& p1, int& p2,  double detTheta, double lx, double ly, dou
   } while ( (std::abs(xval) > lx) || (std::abs(yval) > ly));
 }
 
-void detNodeCompute(detector strip) {
+void detNodeCompute(detector& mystrip) {
   double xloc = 0.0, yloc = 0.0;
-  double dx = strip.lenX / (double)(strip.numStripX + 1);
-  double dy = strip.lenY / (double)(strip.numStripY + 1);
-  int icnt = 0;
+  mystrip.dx = (mystrip.numStripX) ? mystrip.lenX / (double)(mystrip.numStripX + 1) : 0.0; // horizontal
+  mystrip.dy = (mystrip.numStripY) ? mystrip.lenY / (double)(mystrip.numStripY + 1) : 0.0; // vertical
 
-  for (int xnode = 0; xnode < strip.numStripX; xnode++) {
-    for (int ynode = 0 ; ynode < strip.numStripY; ynode++) {
+  std::cout << mystrip.name << "  XNum = " << mystrip.numStripX << "  YNum = " << mystrip.numStripY << "  ";
+  std::cout << "dx = " << mystrip.dx << " dy = " << mystrip.dy << std::endl;
+
+  int icnt = 0;
+  if ( mystrip.dx == 0.0 && mystrip.dy != 0.0) {                           //   hozizontal
+    icnt = 0;
+    for (int ynode=0; ynode< mystrip.numStripY; ynode++) {
+      ++icnt;
       std::vector<double> temp;
-      xloc = -strip.halfX + (xnode + 1) * dx;
-      yloc = -strip.halfY + (ynode + 1) * dy;
+      xloc = -999.99;
+      yloc = -mystrip.halfY + (ynode + 1) * mystrip.dy;
       temp.push_back(icnt);
       temp.push_back(xloc);
       temp.push_back(yloc);
       detNodes.push_back(temp);
       temp.clear();
+    }
+  }else if (mystrip.dx != 0.0 && mystrip.dy == 0.0) {                     // vertical
+    icnt = 0;
+    for (int xnode = 0; xnode < mystrip.numStripX; xnode++) {
       ++icnt;
+      std::vector<double> temp;
+      xloc = -mystrip.halfX + (xnode + 1) * mystrip.dx;
+      yloc = -999.99;
+      temp.push_back(icnt);
+      temp.push_back(xnode);
+      temp.push_back(yloc);
+      detNodes.push_back(temp);
+      temp.clear();
+    }
+} else if (mystrip.dx != 0.0 && mystrip.dy != 0.0) {
+    icnt = 0;
+    for (int xnode = 0; xnode < mystrip.numStripX; xnode++) {
+      for (int ynode = 0 ; ynode < mystrip.numStripY; ynode++) {
+        ++icnt;
+        std::vector<double> temp;
+        xloc = -mystrip.halfX + (xnode + 1) * mystrip.dx;
+        yloc = -mystrip.halfY + (ynode + 1) * mystrip.dy;
+        temp.push_back(icnt);
+        temp.push_back(xloc);
+        temp.push_back(yloc);
+        detNodes.push_back(temp);
+        temp.clear();
+      }
     }
   }
 }
 
 
-int checkDetection(double xpos, double ypos) {
+int checkDetection(double xpos, double ypos, detector det) {
   int chk = 0; // 0 means not detected 1 means detected
   double xx = 0.0, yy = 0.0;
- 
+  int detType = 0;
+  if (det.dx == 0.0) detType = 0;
+  if (det.dy == 0.0) detType = 1;
+  if (det.dx != 0.0 && det.dy != 0.0) detType = 2;
+
   for (std::vector<std::vector<double> >::iterator it1 = detNodes.begin(); it1 !=detNodes.end(); ++it1) {
     xx = (*it1)[1];
     yy = (*it1)[2];
-    chk = (isAT(xpos, xx) && isAT(ypos, yy));
-  }
 
-  return 0;
+    switch (detType) {
+    case 0: chk = isAT(ypos, yy);
+    case 1: chk = isAT(xpos, xx);
+    case 2: chk = (isAT(xpos, xx) && isAT(ypos, yy));
+      if (chk)  std::cout << detType << " " << chk << std::endl;
+    }
+  }
+  return chk;
 }
+

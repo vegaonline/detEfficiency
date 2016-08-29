@@ -11,7 +11,7 @@ int main ( int argc, char** argv )
   double solAngF1 = 0.0, solAngF2 = 0.0;
   double theta = 999.9, phi = 999.9;
   double xpos = 0.0, ypos = 0.0;
-  long NumParticles = 3e+7;  //  1e+8;  // total number of pairs to see
+  long NumParticles = 20;  //  1e+8;  // total number of pairs to see
   long pDetected = 0;    // particles detected by detector
 
 
@@ -23,7 +23,12 @@ int main ( int argc, char** argv )
 
   // initialize detector
   detector strip("strip", 50, 50, 1.55, 16, 16); // 5 cm X 5 cm X 0.155 cm and 16 X 16 lines
+  detector eDet ("eDet", 50, 50, 1.55, 0, 16); // 5cm X 5cm X 0.155cm 16 horizontal
+  detector delEDet("delEDet", 50, 50, 50e-3, 16, 0); // 5cm X 5cm X 50e-4cm 16 vertical
   detNodeCompute(strip);
+  detNodeCompute(eDet);
+  detNodeCompute(delEDet);
+
 
   // std::cout << " strip area = " << strip.SArea() << std::endl;
   std::cout << " Strip limit :->  X = " << -strip.halfX << " mm : " << strip.halfX
@@ -47,8 +52,9 @@ int main ( int argc, char** argv )
       gen_Particle (particle1, particle2,  detTheta, strip.halfX, strip.halfY, solAngF1, detDist, xpos, ypos);
     } while (particle1 == 99 || particle2 == 99);
     // std::cout << particleArray[particle1] << " --- " << particleArray[particle2] << " x = " << xpos << " y = " << ypos << std::endl;
-    if (checkDetection(xpos, ypos)) 
-      std::cout << particleArray[particle1] << " and " << particleArray[particle2] << " detected....." << std::endl;   
+    checkDetection(xpos, ypos, eDet);
+    //   if (checkDetection(xpos, ypos, eDet)) 
+    //  std::cout << particleArray[particle1] << " and " << particleArray[particle2] << " detected....." << std::endl;   
   }
     return 0;
 }
