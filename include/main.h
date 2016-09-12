@@ -16,7 +16,7 @@
 #define x2(x) (x * x)
 #define sqrt(x) pow(x, 0.5)
 #define SGN(x) (x > 0) - (x < 0)
-#define isAT(x1, x2) ((x1 >= (x2 - EPSA)) && (x1 <= (x2 + EPSA))) //  search for X1 within x2+/ EPSA
+#define isAT(x1, x2, da) ((x1 >= (x2 - da)) && (x1 <= (x2 + da))) //  search for X1 within x2+-da
 
 #define ev2J 1.60217656535e-19
 #define amu 1.66053904020e-24     // g
@@ -111,14 +111,16 @@ class stripdetector {
     double dy;
     int numStripX;
     int numStripY;
+    double biasfrontV;
+    double biasbackV;
 
   public:
     double SArea()
     {
         return lenX * lenY;
     } // surface area;
-    detector(std::string name, double lx, double ly, double thk, double gp, int nx, int ny)
-        : name(name), lenX(lx), lenY(ly), thick(thk), gap(gp), numStripX(nx), numStripY(ny)
+ stripdetector(std::string name, double lx, double ly, double thk, double gp, int nx, int ny, double frontV, double backV)
+   : name(name), lenX(lx), lenY(ly), thick(thk), gap(gp), numStripX(nx), numStripY(ny), biasfrontV(frontV), biasbackV(backV)
     {
     }
 };
@@ -170,8 +172,10 @@ void gen_Particle(int& p1,
 void detNodeCompute(stripdetector& mystrip)
 {
     double xloc = 0.0, yloc = 0.0;
-    mystrip.dx = (mystrip.numStripX) ? mystrip.lenX / (double)(mystrip.numStripX + 1) : 0.0; // horizontal
-    mystrip.dy = (mystrip.numStripY) ? mystrip.lenY / (double)(mystrip.numStripY + 1) : 0.0; // vertical
+    double totGapX = mystrip.gap * (mystrip.numStripX - 1);
+    double totGapY = mystrip.gap * (mystrip.numStripY - 1);
+    mystrip.dx = (mystrip.numStripX) ? (mystrip.lenX - totGapX) / (double)(mystrip.numStripX) : 0.0; // horizontal
+    mystrip.dy = (mystrip.numStripY) ? (mystrip.lenY - totGapY) / (double)(mystrip.numStripY) : 0.0; // vertical
 
     std::cout << mystrip.name << "  XNum = " << mystrip.numStripX << "  YNum = " << mystrip.numStripY << "  ";
     std::cout << "dx = " << mystrip.dx << " dy = " << mystrip.dy << std::endl;
@@ -223,9 +227,10 @@ void detNodeCompute(stripdetector& mystrip)
     }
 }
 
-int checkDetection(double xpos, double ypos, detector det)
+int checkDetection(double xpos, double ypos, stripdetector det)
 {
     int chk = 0; // 0 means not detected 1 means detected
+    
     double xx = 0.0, yy = 0.0;
     int detType = 0;
     if(det.dx == 0.0)
@@ -241,13 +246,13 @@ int checkDetection(double xpos, double ypos, detector det)
 
         switch(detType) {
         case 0:
-            chk = isAT(ypos, yy);
+	  chk = isAT(ypos, yy, det.dy);
         case 1:
-            chk = isAT(xpos, xx);
+	  chk = isAT(xpos, xx, det.dx);
         case 2:
-            chk = (isAT(xpos, xx) && isAT(ypos, yy));
-            if(chk)
-                std::cout << detType << " " << chk << std::endl;
+	  chk = (isAT(xpos, xx, det.dx) && isAT(ypos, yy, det.dy));
+	  //if(chk)
+          //      std::cout << det.name << "   " << detType << " " << chk << std::endl;
         }
     }
     return chk;

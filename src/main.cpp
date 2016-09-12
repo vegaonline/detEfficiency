@@ -21,9 +21,9 @@ int main(int argc, char** argv)
     particle proton("proton", 1.00727646687991, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     // initialize detector
-    stripdetector strip("strip", 49.5, 49.5, 1.55, 0.1, 16, 16);     // 5 cm X 5 cm X 0.155 cm and 16 X 16 lines
-    stripdetector eDet("eDet", 49.5, 49.5, 1.50, 0.1, 0, 16);        // 5cm X 5cm X 0.155cm 16 horizontal
-    stripdetector delEDet("delEDet", 49.5, 49.5, 65e-3, 0.1, 16, 0); // 5cm X 5cm X 50e-4cm 16 vertical
+    stripdetector strip("strip", 49.5, 49.5, 1.55, 0.1, 16, 16, 0.0, 0.0);     // 5 cm X 5 cm X 0.155 cm and 16 X 16 lines bias = 0.0V
+    stripdetector eDet("eDet", 49.5, 49.5, 1.50, 0.1, 16, 16, 0.0, 0.0);        // 5cm X 5cm X 0.155cm 16 horizontal 16 vert
+    stripdetector delEDet("delEDet", 49.5, 49.5, 65e-3, 0.1, 16, 0, 0.0, 0.0); // 5cm X 5cm X 50e-4cm 16 vertical
     detNodeCompute(strip);
     detNodeCompute(eDet);
     detNodeCompute(delEDet);
@@ -53,6 +53,7 @@ int main(int argc, char** argv)
         // std::cout << particleArray[particle1] << " --- " << particleArray[particle2] << " x = " << xpos << " y = " <<
         // ypos << std::endl;
         checkDetection(xpos, ypos, eDet);
+        checkDetection(xpos, ypos, delEDet);
         //   if (checkDetection(xpos, ypos, eDet))
         //  std::cout << particleArray[particle1] << " and " << particleArray[particle2] << " detected....." <<
         //  std::endl;
