@@ -21,9 +21,11 @@ int main(int argc, char** argv)
     particle proton("proton", 1.00727646687991, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     // initialize detector
-    stripdetector strip("strip", 49.5, 49.5, 1.55, 0.1, 16, 16, 0.0, 0.0);     // 5 cm X 5 cm X 0.155 cm and 16 X 16 lines bias = 0.0V
-    stripdetector eDet("eDet", 49.5, 49.5, 1.50, 0.1, 16, 16, 0.0, 0.0);        // 5cm X 5cm X 0.155cm 16 horizontal 16 vert
-    stripdetector delEDet("delEDet", 49.5, 49.5, 65e-3, 0.1, 16, 0, 0.0, 0.0); // 5cm X 5cm X 50e-4cm 16 vertical
+    detArray={0, 0, 9, 9, 1, 0, 1, 1};
+    makeDetectors(detArray, detDist);
+    stripdetector strip("strip", dets1, dets2, dets3, detStripGap, 16, 16, 0.0, 0.0);     // 5 cm X 5 cm X 0.155 cm and 16 X 16 lines bias = 0.0V
+    stripdetector eDet("eDet", dets1, dets2, dets3, detStripGap, 16, 16, 0.0, 0.0);        // 5cm X 5cm X 0.155cm 16 horizontal 16 vert
+    stripdetector delEDet("delEDet", edets1, edets2, edets3, edetStripGap, 16, 0, 0.0, 0.0); // 5cm X 5cm X 50e-4cm 16 vertical
     detNodeCompute(strip);
     detNodeCompute(eDet);
     detNodeCompute(delEDet);

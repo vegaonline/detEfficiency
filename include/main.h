@@ -32,8 +32,13 @@ std::mt19937_64 mySeed(seedRD);
 unsigned int numParticle = 4;
 std::string particleArray[] = {"alpha", "triton", "deuteron", "proton"};
 
-// createdetector node vector
+// create detector node vector
 std::vector<std::vector<double>> detNodes;
+std::vector<int> detArray;
+
+// detector parameters
+double edets1 = 49.5, edets2 = 49.5, edets3 = 65.0e-3, edetStripGap = 0.1;
+double dets1 = 49.5, dets2 = 49.5, dets3 = 1.5, detStripGap = 0.1;
 
 class Vector3 {
     double v1;
@@ -98,7 +103,7 @@ class target {
     }
 };
 
-class stripdetector {
+class stripdetectorG {
   public:
     std::string name;
     double lenX;
@@ -124,6 +129,10 @@ class stripdetector {
     {
     }
 };
+
+class stripDet :: public stripdetectorG {
+
+}
 
 // generate particle pair within a solid angle
 
@@ -225,6 +234,16 @@ void detNodeCompute(stripdetector& mystrip)
             }
         }
     }
+}
+
+// Here make detector series
+// eDet = 0, Det = 1, verticleConnected = 0, horizontalConnected = 1, 9 :: Not Connected
+// Array presented reports arrangement of the detectors 
+// like {{0, 0, 0, 1}, {1, 0, 1, 1}} means {{eDetV, eDetH}, {DetV, DetH}}
+//      {{0, 0, 9, 9}, {1, 0, 1, 1}} means {{eDetV, NC}, {DetV, DetH}}
+//      {{9, 9, 9, 9}, {1, 0, 1, 1}} means only Det connected
+void makeDetectors(std::vector<int> detArray, double distFirst) {
+
 }
 
 int checkDetection(double xpos, double ypos, stripdetector det)
